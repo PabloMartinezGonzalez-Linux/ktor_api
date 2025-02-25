@@ -1,0 +1,27 @@
+version: '3.8'
+services:
+  mariadb:
+    image: mariadb:latest
+    container_name: mariadb_ktor
+    environment:
+      MYSQL_ROOT_PASSWORD: admin
+      MYSQL_DATABASE: ktor_api_db
+      MYSQL_USER: pablo
+      MYSQL_PASSWORD: admin
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: pma_ktor
+    environment:
+      PMA_HOST: mariadb
+      PMA_USER: pablo
+      PMA_PASSWORD: admin
+    ports:
+      - "8081:80"
+
+volumes:
+  mariadb_data:
