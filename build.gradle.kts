@@ -32,4 +32,5 @@ dependencies {
     implementation("org.mariadb.jdbc:mariadb-java-client:3.3.2")
     implementation("io.ktor:ktor-server-content-negotiation:3.1.0")
     implementation("io.ktor:ktor-serialization-kotlinx-json:3.1.0")
+    implementation("io.ktor:ktor-server-auth-jwt:3.1.0")
 }

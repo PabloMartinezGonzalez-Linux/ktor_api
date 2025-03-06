@@ -10,12 +10,16 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import data.models.LoginRequest
 import data.models.RegisterRequest
 import domain.models.Users
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
+import java.util.Date
 
 fun Route.authRoutes() {
     post("/auth/login") {
-
+        // Recibe la solicitud de login y la deserializa en un objeto LoginRequest
         val loginRequest = call.receive<LoginRequest>()
 
+        // Busca el usuario en la base de datos
         val user = transaction {
             Users.select { Users.username eq loginRequest.username }.singleOrNull()
         }
@@ -25,13 +29,25 @@ fun Route.authRoutes() {
             return@post
         }
 
+        // Compara la contraseña proporcionada con la almacenada
         val dbPassword = user[Users.password]
         if (loginRequest.password != dbPassword) {
             call.respond(HttpStatusCode.Unauthorized, "Contraseña incorrecta")
             return@post
         }
 
-        call.respondText("Login exitoso")
+        // Obtiene el userId del usuario (suponiendo que Users tiene una columna "id")
+        val userId = user[Users.id]
+
+        // Genera el token JWT incluyendo el claim "userId"
+        val token = JWT.create()
+            .withClaim("username", loginRequest.username)
+            .withClaim("userId", userId)
+            .withExpiresAt(Date(System.currentTimeMillis() + 600000)) // Token válido por 10 minutos
+            .sign(Algorithm.HMAC256("secret"))
+
+        // Devuelve el token en formato JSON
+        call.respond(mapOf("token" to token))
     }
 
     post("/auth/register") {

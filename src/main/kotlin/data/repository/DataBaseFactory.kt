@@ -22,7 +22,6 @@ object DatabaseFactory {
             SchemaUtils.create(Users, Cards)
 
             if (Users.selectAll().empty()) {
-                // Inserta usuarios de prueba
                 val adminId = Users.insert {
                     it[username] = "admin"
                     it[email] = "admin@admin.com"
@@ -36,10 +35,9 @@ object DatabaseFactory {
                 } get Users.id
 
                 println("Usuarios iniciales creados en la base de datos")
-            }
 
-            if (Cards.selectAll().empty()) {
                 Cards.insert {
+                    it[userId] = adminId
                     it[photo] = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA"
                     it[name] = "Card Admin 1"
                     it[description] = "Descripción de la card de admin"
@@ -48,6 +46,7 @@ object DatabaseFactory {
                 }
 
                 Cards.insert {
+                    it[userId] = pabloId
                     it[photo] = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUB"
                     it[name] = "Card Pablo 1"
                     it[description] = "Descripción de la card de pablo"
@@ -56,6 +55,7 @@ object DatabaseFactory {
                 }
 
                 Cards.insert {
+                    it[userId] = adminId
                     it[photo] = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUC"
                     it[name] = "Card Admin 2"
                     it[description] = "Otra card para admin"
