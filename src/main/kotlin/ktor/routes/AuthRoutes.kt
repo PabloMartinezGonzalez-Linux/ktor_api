@@ -71,6 +71,6 @@ fun Route.authRoutes() {
             }
         }
 
-        call.respond(HttpStatusCode.Created, "Usuario registrado exitosamente")
+        call.respond(HttpStatusCode.Created, mapOf("message" to "Usuario registrado exitosamente"))
     }
 }
