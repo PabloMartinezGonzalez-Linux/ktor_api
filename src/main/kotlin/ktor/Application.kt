@@ -29,10 +29,12 @@ fun Application.module() {
                     .build()
             )
             validate { credential ->
-                if (credential.payload.getClaim("username").asString().isNotEmpty()) {
+                val userId = credential.payload.getClaim("userId").asInt()
+                if (userId != null) {
                     JWTPrincipal(credential.payload)
                 } else null
             }
+
         }
     }
 

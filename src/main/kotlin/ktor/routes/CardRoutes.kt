@@ -12,6 +12,7 @@ import data.models.CardRequest
 import data.models.CardResponse
 import domain.models.Cards
 import io.ktor.server.routing.*
+import data.utils.ImageUtils
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
 fun Route.cardRoutes() {
@@ -35,11 +36,24 @@ fun Route.cardRoutes() {
 
             // Recibe la solicitud y la convierte a JSON (CardRequest)
             val cardRequest = call.receive<CardRequest>()
-            // Ignora cardRequest.userId y usa el tokenUserId para asegurar la asociación
+
+            // Procesa la imagen: decodifica y guarda la imagen en el directorio del usuario,
+            // obteniendo el nombre del archivo resultante.
+            val savedFileName = ImageUtils.saveBase64Image(
+                call.application,
+                cardRequest.photo,
+                tokenUserId.toString()
+            )
+            if (savedFileName == null) {
+                call.respond(HttpStatusCode.BadRequest, "Error al procesar la imagen")
+                return@post
+            }
+
+            // Inserta la nueva card usando el nombre del archivo en lugar del string Base64 completo
             val id = transaction {
                 Cards.insert {
                     it[userId] = tokenUserId
-                    it[photo] = cardRequest.photo
+                    it[photo] = savedFileName  // Se almacena el nombre del archivo
                     it[name] = cardRequest.name
                     it[description] = cardRequest.description
                     it[averageRating] = cardRequest.averageRating
@@ -48,6 +62,7 @@ fun Route.cardRoutes() {
             }
             call.respond(HttpStatusCode.Created, "Card creada con id $id")
         }
+
 
         // Obtener todas las cards del usuario autenticado (Read - list)
         get {

@@ -18,6 +18,7 @@ fun Route.authRoutes() {
     post("/auth/login") {
         // Recibe la solicitud de login y la deserializa en un objeto LoginRequest
         val loginRequest = call.receive<LoginRequest>()
+        println("Datos recibidos: $loginRequest")
 
         // Busca el usuario en la base de datos
         val user = transaction {
@@ -41,14 +42,21 @@ fun Route.authRoutes() {
 
         // Genera el token JWT incluyendo el claim "userId"
         val token = JWT.create()
+            .withIssuer("ktor.io")
+            .withAudience("ktor_audience")
             .withClaim("username", loginRequest.username)
             .withClaim("userId", userId)
-            .withExpiresAt(Date(System.currentTimeMillis() + 600000)) // Token válido por 10 minutos
+            .withExpiresAt(Date(System.currentTimeMillis() + 600000))
             .sign(Algorithm.HMAC256("secret"))
+
+        // Agrega un log para ver el token
+        println("Token generado: $token")
+        // O si usas un logger: log.debug("Token generado: $token")
 
         // Devuelve el token en formato JSON
         call.respond(mapOf("token" to token))
     }
+
 
     post("/auth/register") {
         println("Endpoint /auth/register invocado")
