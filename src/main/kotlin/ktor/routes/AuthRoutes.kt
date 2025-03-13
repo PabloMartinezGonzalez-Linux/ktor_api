@@ -16,11 +16,9 @@ import java.util.Date
 
 fun Route.authRoutes() {
     post("/auth/login") {
-        // Recibe la solicitud de login y la deserializa en un objeto LoginRequest
         val loginRequest = call.receive<LoginRequest>()
         println("Datos recibidos: $loginRequest")
 
-        // Busca el usuario en la base de datos
         val user = transaction {
             Users.select { Users.username eq loginRequest.username }.singleOrNull()
         }
@@ -30,17 +28,14 @@ fun Route.authRoutes() {
             return@post
         }
 
-        // Compara la contraseña proporcionada con la almacenada
         val dbPassword = user[Users.password]
         if (loginRequest.password != dbPassword) {
             call.respond(HttpStatusCode.Unauthorized, "Contraseña incorrecta")
             return@post
         }
 
-        // Obtiene el userId del usuario (suponiendo que Users tiene una columna "id")
         val userId = user[Users.id]
 
-        // Genera el token JWT incluyendo el claim "userId"
         val token = JWT.create()
             .withIssuer("ktor.io")
             .withAudience("ktor_audience")
@@ -49,14 +44,10 @@ fun Route.authRoutes() {
             .withExpiresAt(Date(System.currentTimeMillis() + 600000))
             .sign(Algorithm.HMAC256("secret"))
 
-        // Agrega un log para ver el token
         println("Token generado: $token")
-        // O si usas un logger: log.debug("Token generado: $token")
 
-        // Devuelve el token en formato JSON
         call.respond(mapOf("token" to token))
     }
-
 
     post("/auth/register") {
         println("Endpoint /auth/register invocado")

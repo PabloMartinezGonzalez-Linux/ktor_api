@@ -17,16 +17,13 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
 fun Route.cardRoutes() {
 
-    // Helper para obtener el userId del token JWT autenticado.
     fun getAuthenticatedUserId(call: ApplicationCall): Int? {
-        // Asegúrate de que el token incluya el claim "userId" (de tipo Int)
         val principal = call.principal<JWTPrincipal>()
         return principal?.payload?.getClaim("userId")?.asInt()
     }
 
     route("/cards") {
 
-        // Crear una nueva card (Create)
         post {
             val tokenUserId = getAuthenticatedUserId(call)
             if (tokenUserId == null) {
@@ -34,26 +31,14 @@ fun Route.cardRoutes() {
                 return@post
             }
 
-            // Recibe la solicitud y la convierte a JSON (CardRequest)
             val cardRequest = call.receive<CardRequest>()
 
-            // Procesa la imagen: decodifica y guarda la imagen en el directorio del usuario,
-            // obteniendo el nombre del archivo resultante.
-            val savedFileName = ImageUtils.saveBase64Image(
-                call.application,
-                cardRequest.photo,
-                tokenUserId.toString()
-            )
-            if (savedFileName == null) {
-                call.respond(HttpStatusCode.BadRequest, "Error al procesar la imagen")
-                return@post
-            }
+            val savedFileName = ImageUtils.saveBase64Image(call.application, cardRequest.photo, tokenUserId.toString())
 
-            // Inserta la nueva card usando el nombre del archivo en lugar del string Base64 completo
             val id = transaction {
                 Cards.insert {
                     it[userId] = tokenUserId
-                    it[photo] = savedFileName  // Se almacena el nombre del archivo
+                    it[photo] = savedFileName ?: "default.png"
                     it[name] = cardRequest.name
                     it[description] = cardRequest.description
                     it[averageRating] = cardRequest.averageRating
@@ -64,7 +49,7 @@ fun Route.cardRoutes() {
         }
 
 
-        // Obtener todas las cards del usuario autenticado (Read - list)
+
         get {
             val tokenUserId = getAuthenticatedUserId(call)
             if (tokenUserId == null) {
@@ -87,7 +72,6 @@ fun Route.cardRoutes() {
             call.respond(cards)
         }
 
-        // Obtener una card por id, pero solo si pertenece al usuario autenticado (Read - one)
         get("{id}") {
             val tokenUserId = getAuthenticatedUserId(call)
             if (tokenUserId == null) {
@@ -119,7 +103,6 @@ fun Route.cardRoutes() {
             }
         }
 
-        // Actualizar una card existente (Update)
         put("{id}") {
             val tokenUserId = getAuthenticatedUserId(call)
             if (tokenUserId == null) {
@@ -131,7 +114,6 @@ fun Route.cardRoutes() {
                 call.respond(HttpStatusCode.BadRequest, "Id inválido")
                 return@put
             }
-            // Verifica que la card a actualizar pertenece al usuario autenticado
             val ownerId = transaction {
                 Cards.select { Cards.id eq idParam }
                     .map { it[Cards.userId] }
@@ -146,7 +128,6 @@ fun Route.cardRoutes() {
                 return@put
             }
 
-            // Recibe los nuevos datos; ignora cualquier userId enviado en el JSON y usa tokenUserId
             val updateRequest = call.receive<CardRequest>()
             val updatedRows = transaction {
                 Cards.update({ (Cards.id eq idParam) and (Cards.userId eq tokenUserId) }) {
@@ -165,7 +146,6 @@ fun Route.cardRoutes() {
             }
         }
 
-        // Eliminar una card (Delete)
         delete("{id}") {
             val tokenUserId = getAuthenticatedUserId(call)
             if (tokenUserId == null) {

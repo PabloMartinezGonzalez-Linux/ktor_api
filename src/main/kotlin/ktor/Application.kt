@@ -23,7 +23,7 @@ fun Application.module() {
             realm = "ktor sample app"
             verifier(
                 JWT
-                    .require(Algorithm.HMAC256("secret"))  // Cambia "secret" por una clave robusta en producción
+                    .require(Algorithm.HMAC256("secret"))
                     .withAudience("ktor_audience")
                     .withIssuer("ktor.io")
                     .build()
@@ -40,5 +40,4 @@ fun Application.module() {
 
     DatabaseFactory.initDB()
     configureRouting()
-
 }
